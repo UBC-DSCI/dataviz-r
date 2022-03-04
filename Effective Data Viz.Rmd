@@ -1,5 +1,5 @@
 ---
-title: "Effective Data Visualization"
+title: "Effective Data Visualization with R"
 output: learnr::tutorial
 runtime: shiny_prerendered
 ---
@@ -14,10 +14,13 @@ knitr::opts_chunk$set(echo = FALSE)
 knitr::opts_chunk$set(warning = FALSE)
 
 # import datasets
-world_vaccination <- readr::read_csv("data/world_vaccination.csv")
+world_vaccination_raw <- readr::read_csv("data/world_vaccination.csv")
 fast_food <- readr::read_csv("data/fast_food.csv")
 
 # world vaccination setup
+world_vaccination <- world_vaccination_raw %>%
+  filter(!is.na(pct_vaccinated), who_region != "(WHO) Global")
+
 polio <- world_vaccination %>% 
   filter(vaccine == "polio")
 
@@ -140,6 +143,9 @@ The columns in the dataset we are going to be working with are:
 - `pct_vaccinated` - Estimated percentage of people currently in the region who had received a vaccination in that year or earlier (either a polio or Hepatitis B vaccine or both)
 - `vaccine` - Whether it's the `polio` or the `hepatitis_b` vaccine
 
+
+
+
 We want to know three things. First, has there been a change in polio or Hepatitis B vaccination patterns throughout the years? And if so, what is that pattern? Second, have the vaccination patterns for one of these diseases changed more than the other? Third, has there been any difference in polio or Hepatitis B vaccination patterns across different world regions? **The goal for today is to answer these questions by determining, creating, and studying appropriate data visualization displays.** To do this, you will follow the steps outlined below.
 
 The original datasets are available here:
@@ -147,7 +153,11 @@ The original datasets are available here:
    - Polio: [http://apps.who.int/gho/data/view.main.81605?lang=en](http://apps.who.int/gho/data/view.main.81605?lang=en)
    - Hepatitis B: [http://apps.who.int/gho/data/view.main.81300?lang=en](http://apps.who.int/gho/data/view.main.81300?lang=en)
    
-These datasets were reshaped and merged into a single dataset, with which we will be working today. It has already been stored in the `world_vaccination` object in `R`. 
+These datasets were reshaped and merged into a single dataset, with which we will be working today. It has already been stored in the `world_vaccination_raw` object in `R`. Here are the first rows of the data set:
+
+```{r who_ds,echo=TRUE}
+head(world_vaccination_raw)
+```
 
 Now we can start our analysis. Before starting to create plots, however, we should think about what type of display would be useful in this situation. People sometimes find it difficult to find an adequate plot. It can be hard to do so, but it is important!
 
@@ -155,7 +165,7 @@ Recall that we are interested in studying polio and Hepatitis B vaccination tren
 
 
 ```{r good_plot, echo=FALSE}
-world_vaccination <- world_vaccination %>%
+world_vaccination <- world_vaccination_raw %>%
   filter(!is.na(pct_vaccinated), who_region != "(WHO) Global")
 
 vertical_world <- world_vaccination %>% 
@@ -222,10 +232,10 @@ filter(mtcars, cyl != 6)  %>%
 head()
 ```
 
-Filter the `world_vaccination` dataset so that we don't have any NA's in the `pct_vaccinated` column. This can be achieved using the `is.na` function in `R`, which detects which rows are NA. We also want to filter out the `(WHO) Global` region as it is just the average of the other regions. Fill in the `...` in the code below. *Assign your filtered data to the same object called `world_vaccination`.*
+Filter the `world_vaccination_raw` dataset so that we don't have any NA's in the `pct_vaccinated` column. This can be achieved using the `is.na` function in `R`, which detects which rows are NA. We also want to filter out the `(WHO) Global` region as it is just the average of the other regions. Fill in the `...` in the code below. *Assign your filtered data to a new object called `world_vaccination`.*
 
 ```{r q1_1_1, exercise=TRUE, exercise.lines = 3}
-world_vaccination <- world_vaccination %>%
+world_vaccination <- world_vaccination_raw %>%
 filter(!is.na(...), ... != "(WHO) Global")
 head(world_vaccination)
 ```
@@ -245,17 +255,15 @@ quiz(
 
 **Question 1.2** 
 
-Create a scatter plot of the percentage of people vaccinated (y-axis) against year (x-axis) for all the regions in `world_vaccination`. Make sure to label your axes with human readable labels. Ignore all other variables.
+Create a scatter plot of the percentage of people vaccinated (y-axis) against year (x-axis) for all the regions in `world_vaccination`. Ignore all other variables.
 
 *Assign your plot to an object called `world_vacc_plot` and print it afterwards*
 
 
-```{r q1_2, exercise = TRUE, exercise.lines = 6}
+```{r q1_2, exercise = TRUE, exercise.lines = 4}
 world_vacc_plot <- world_vaccination %>% 
   ggplot(...) +
-  geom_...() +
-  labs(... = ...,
-       ... = ...)
+  geom_...()
 world_vacc_plot
 ```
 
@@ -290,7 +298,7 @@ Now that we know how we will separate the data for our visualization, let's do i
 geom_point(aes(colour = ..., shape = ...))  +
 ```
 
-Finally, make sure you change *all* the axes and legends so that they have nicely formatted, human-readable labels. To do this, we will remove the `xlab` and `ylab` label functions and just use the more general `labs` function, specifying all the aesthetics we want to label:
+Finally, make sure you change *all* the axes and legends so that they have nicely formatted, human-readable labels. To do this, we will use the `labs` function, specifying all the aesthetics we want to label:
 
 ```{r echo=TRUE, eval=FALSE}
 labs(x = "...", y = "...", colour = "...", shape = "...")
@@ -418,9 +426,9 @@ Fill in the `...` in the cell below.
 side_by_side_world <- ... %>% 
     ggplot(...) +
     geom_...(...) +
-    labs(...) +
-    xlab(...) + 
-    ylab(...) +
+    labs(x = ...,
+         y = ...,
+         colour = ...) +
     facet_grid(...)
 side_by_side_world
 ```
@@ -552,9 +560,9 @@ Fill in the `...` in the cell below.
 top_restaurants <- fast_food %>%
     filter(state %in% c("CA", "WA", "OR")) %>% 
     group_by(...) %>%
-    ...(n = n()) %>%
-    ...(...) %>% 
-    ...(...)
+    summarise(n = n()) %>%
+    top_n(...) %>% 
+    arrange(...)
 top_restaurants
 ```
 
@@ -589,8 +597,8 @@ To do this fill in the `...` in the cell below. Make sure to label your axes. *A
 count_bar_chart <- ... %>% 
   ggplot(aes(x = ..., y = ...)) + 
   geom_bar(...) +
-  xlab(...) +
-  ylab(...)
+  labs(x = ...,
+       y = ...)
 count_bar_chart
 ```
 
@@ -640,8 +648,8 @@ Now copy your code from question 2.5 and reorder the `name` variable as above. D
 count_bar_chart_C <- top_restaurants %>% 
   ggplot(aes(x = reorder(..., ...), y = ...)) +
   geom_bar(...) +
-  xlab(...) +
-  ylab(...) +
+  labs(x = ...,
+       y = ...) +
   coord_flip()
 count_bar_chart_C
 ```
@@ -653,17 +661,18 @@ count_bar_chart_C
 **Question 2.7**
 
 
-To answer the second question we need a data frame that has three columns: `name` (restaurant), `state`, and `n` (restaurant count). You will need to use `semi_join` to get the intersection of two data frames. In this case, you will use `semi_join` to use the names in `top_restaurants` to get the counts of each restaurant in each of the 3 states from the `fast_food` data frame. You will also need to `group_by` both `name` and `state`. Name this new data frame `top_n_state`.
+To answer the second question we need a data frame that has three columns: `name` (restaurant), `state`, and `n` (restaurant count). You will need to use `semi_join` to get the intersection of two data frames. In this case, you will use `semi_join` to use the names in `top_restaurants` to get the counts of each restaurant in each of the 3 states from the `fast_food` data frame. You will also need to `group_by` both `name` and `state`, and then `summarise` the counts with `n=n()`.
+Name this new data frame `top_n_state`.
  
  *If you are interested in learning more about joining data frames in R, see [this cheatsheet](https://stat545.com/bit001_dplyr-cheatsheet.html).*
 
 
 ```{r q2_7, exercise=TRUE, exercise.lines=6}
-... <- fast_food %>%
+top_n_state <- fast_food %>%
     semi_join(top_restaurants) %>% # semi_join gives the intersection of two data frames
     filter(state %in% c("CA", "WA", "OR")) %>% 
-    ...(..., ...) %>%
-    ...(...) 
+    group_by(..., ...) %>%
+    summarise(...) 
 top_n_state
 ```
 
@@ -684,8 +693,8 @@ To do this fill in the `...` in the cell below. Make sure to label your axes.
 top_n_state_plot <- ... %>%
   ggplot(aes(x = state, y = n, fill = ...)) + 
   ...(stat = ..., position = "...") +
-  xlab(...) +
-  ylab(...) +
+  labs(x = ...,
+       y = ...) +
   labs(fill = "Restaurant") 
 top_n_state_plot
 ```
@@ -753,7 +762,7 @@ Finally, let's find which state on the west coast has the greatest number of fas
 ... <- fast_food %>%
     semi_join(top_restaurants) %>% # semi_join gives the intersection of two data frames
     filter(state %in% c("CA", "WA", "OR")) %>% 
-    ...(...) %>%
+    group_by(...) %>%
     ...(n = n()) 
 state_counts
 ```
